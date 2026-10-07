@@ -1,37 +1,45 @@
 # Superagent 👻 — Free AI Clone
 
-A public, static clone of a personal AI agent (originally built on Base44 Superagent). It runs **entirely in your browser** — no server, no accounts, no tracking, and it costs nothing to run.
+A public, static clone of a personal AI agent (originally built on Base44 Superagent). It runs **entirely in your browser** — no server, no accounts, no tracking, zero setup.
+
+## ⚠ Everything here is public by design
+
+- Your messages are sent to a third-party AI provider (Pollinations by default, or Google/xAI/OpenRouter if you bring your own key).
+- With GitHub sync on, the whole conversation is saved to a **public GitHub repo** (a `conversations/` folder), visible to anyone.
+- Don't type anything private into this chat.
 
 ## How to use
 
-1. Get a **free** Google Gemini API key at [aistudio.google.com](https://aistudio.google.com/apikey) (free tier, no card needed). An xAI (Grok) key also works.
-2. Open the site, click **Settings**, paste your key.
-3. Chat. That's it.
+1. Open the site. Type. That's it — zero-setup mode uses a free keyless AI API.
+2. (Optional, better brains) Settings → paste a free Gemini key from [aistudio.google.com](https://aistudio.google.com/apikey), or an xAI / OpenRouter key.
+3. (Optional, public memory) Settings → GitHub Memory → paste a fine-grained GitHub PAT with **Contents: read & write** on the repo. Turn on auto-save and every reply is committed to the public `conversations/` folder — your chat history lives on GitHub and follows you across devices. Load any past session back with "Load a conversation".
 
 ## Privacy & security
 
-- Your API key is stored **only in your browser's localStorage** and sent only to the AI provider you picked (Google or xAI) when you send a message.
-- No key is embedded in this repo. No analytics, no backend, no server-side logging.
-- Conversation history lives in your browser tab and resets when you clear it.
+- API keys and GitHub tokens are stored **only in your browser's localStorage** and sent only to the services you explicitly picked.
+- No key or token is embedded in this repo. No analytics, no backend, no server-side logging.
+- The AI provider sees your messages; GitHub sees your synced conversations; that's the whole notice.
 
 ## Features
 
-- Dark ghost theme, mobile-friendly
-- Chat with a personality: warm, low-key, a little gremlin, allergic to filler words
-- Provider + model picker (Gemini / Grok), editable system prompt
-- Markdown-lite rendering, typing indicator, conversation reset
+- Zero setup, keyless chat out of the box
+- Multi-provider: Pollinations (free, no key) / Google Gemini / xAI Grok / OpenRouter free models
+- Gemini safety settings set to the loosest the API allows
+- Editable system prompt (the personality is yours to rewrite)
+- Public GitHub memory sync: auto-save, manual save, session list, restore
+- Dark ghost theme, mobile-friendly, markdown-lite, typing indicator
 - Quick links to [Benkillingit](https://github.com/Benkillingit) and [APAX 3.0](https://github.com/Benkillingit/apax3)
 
 ## Run it yourself
 
-It's a single `index.html` — download it and open it in any browser. Or clone and host anywhere static (GitHub Pages included):
+Single `index.html` — download it and open it in any browser, or host anywhere static:
 
 ```bash
 git clone https://github.com/Benkillingit/superagent.git
 cd superagent
-# just open index.html
+# open index.html
 ```
 
 ## Credits
 
-Personality and design cloned from a Base44 Superagent with its owner's blessing. MIT licensed — do whatever.
+Personality and design cloned from a Base44 Superagent with its owner's blessing. MIT licensed.
