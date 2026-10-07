@@ -175,6 +175,10 @@
       <label>MODEL</label>
       <select id="model"></select>
       <input type="text" id="customModel" placeholder="Or type any model id (optional)" style="margin-top:8px" autocomplete="off">
+      <div class="switch" style="margin-top:10px">
+        <input type="checkbox" id="webSearch">
+        <span>🌐 Web access: let it search the internet (Gemini, via Google Search grounding)</span>
+      </div>
     </div>
 
     <div class="field">
@@ -233,8 +237,8 @@ const WELCOME = `Hey, I'm Superagent 👻 — a free clone of Ben's personal AI,
 ⚠ Heads up: everything here is public by design. Messages go to a third-party AI service, and with GitHub sync on, the conversation saves to a public repo. Keep it non-private.`;
 
 const MODELS = {
-  pollinations: ["openai","mistral","llama","deepseek","gemini"],
-  gemini: ["gemini-2.0-flash","gemini-2.5-flash","gemini-2.5-flash-lite","gemini-2.5-pro","gemini-1.5-flash"],
+  pollinations: ["openai-fast","openai","mistral","llama"],
+  gemini: ["gemini-3.8-flash","gemini-3.6-flash","gemini-2.5-flash","gemini-2.5-pro"],
   grok: ["grok-4-fast","grok-4","grok-3","grok-3-mini"],
   openrouter: ["meta-llama/llama-3.3-70b-instruct:free","deepseek/deepseek-chat-v3-0324:free","google/gemini-2.0-flash-exp:free","mistralai/mistral-small-3.1-24b-instruct:free"]
 };
@@ -255,6 +259,7 @@ const S = {
   key: localStorage.getItem("sa_key") || "",
   model: localStorage.getItem("sa_model") || MODELS.pollinations[0],
   customModel: localStorage.getItem("sa_custommodel") || "",
+  web: localStorage.getItem("sa_web") === "1",
   sys: localStorage.getItem("sa_sys") || DEFAULT_SYS,
   history: JSON.parse(localStorage.getItem("sa_history") || "[]")
 };
@@ -313,6 +318,7 @@ async function callGemini(){
   const body = {
     systemInstruction: {parts:[{text:S.sys}]},
     contents: S.history.map(m=>({role: m.role==="user"?"user":"model", parts:[{text:m.text}]})),
+    ...(S.web ? {tools:[{google_search:{}}]} : {}),
     safetySettings: ["HARM_CATEGORY_HARASSMENT","HARM_CATEGORY_HATE_SPEECH","HARM_CATEGORY_SEXUALLY_EXPLICIT","HARM_CATEGORY_DANGEROUS_CONTENT"]
       .map(c=>({category:c, threshold:"BLOCK_NONE"})),
     generationConfig: {temperature:0.9, maxOutputTokens:4096}
@@ -465,6 +471,7 @@ function openSettings(){
   fillModels();
   $("apiKey").value = S.key;
   $("customModel").value = S.customModel;
+  $("webSearch").checked = S.web;
   $("sysprompt").value = S.sys;
   $("ghPat").value = G.pat;
   $("ghRepo").value = G.repo;
@@ -488,6 +495,8 @@ $("saveSettings").addEventListener("click", ()=>{
   localStorage.setItem("sa_key",S.key);
   localStorage.setItem("sa_model",S.model);
   localStorage.setItem("sa_custommodel",S.customModel);
+  S.web = $("webSearch").checked;
+  localStorage.setItem("sa_web",S.web?"1":"0");
   localStorage.setItem("sa_sys",S.sys);
   localStorage.setItem("sa_ghpat",G.pat);
   localStorage.setItem("sa_ghrepo",G.repo);
