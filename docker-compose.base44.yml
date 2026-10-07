@@ -1,0 +1,26 @@
+# Base44 sandbox/dev environment.
+#
+# This project is a single self-contained static page (index.html): no build
+# step, no dependencies, no server-side configuration. The repo root is bind
+# mounted into nginx, so edits are served immediately without a rebuild.
+#
+# Bring up:  docker compose -f docker-compose.base44.yml up -d
+# Logs:      docker compose -f docker-compose.base44.yml logs -f web
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./:/usr/share/nginx/html:ro
+      # Full nginx.conf: the sandbox checkout is root-only (0700), so nginx
+      # must keep its workers as root to read it.
+      - ./.base44/nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: on-failure
+    healthcheck:
+      # Serve real content, not just an open port.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ | grep -q Superagent || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
