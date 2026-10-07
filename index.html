@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superagent 👻</title>
+<meta name="description" content="A free, static clone of Ben's personal AI agent. Runs entirely in your browser. Bring your own free API key.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%91%BB%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#12151d; --panel2:#171b26; --border:#232838;
+    --text:#e8eaf0; --muted:#8b93a7; --accent:#7c6cf0; --accent2:#9d8bff;
+    --user:#2b3163; --ghost:#16b981; --err:#ff6b6b; --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1200px 600px at 70% -10%, #1a1440 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+  }
+  header{
+    display:flex;align-items:center;gap:10px;padding:10px 16px;
+    border-bottom:1px solid var(--border);background:rgba(11,13,18,.8);backdrop-filter:blur(8px);
+    flex-shrink:0;
+  }
+  header .logo{font-weight:800;font-size:1.05rem;letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+  header .logo .dot{width:8px;height:8px;border-radius:50%;background:var(--ghost);box-shadow:0 0 8px var(--ghost)}
+  header nav{margin-left:auto;display:flex;gap:6px;align-items:center}
+  .btn{
+    background:transparent;border:1px solid var(--border);color:var(--muted);
+    padding:6px 12px;border-radius:9px;cursor:pointer;font-size:.82rem;text-decoration:none;
+    transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{color:var(--text);border-color:var(--accent);background:var(--panel2)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .btn.primary:hover{background:var(--accent2);border-color:var(--accent2)}
+  #chat{flex:1;overflow-y:auto;padding:20px 16px 8px;scroll-behavior:smooth}
+  .wrap{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+  .msg{display:flex;gap:10px;max-width:92%;animation:pop .18s ease-out}
+  .msg.user{align-self:flex-end;flex-direction:row-reverse}
+  .msg .avatar{
+    width:32px;height:32px;border-radius:10px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:1.05rem;
+    background:var(--panel2);border:1px solid var(--border);
+  }
+  .msg .bubble{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:10px 14px;line-height:1.55;font-size:.95rem;overflow-wrap:break-word;min-width:0;
+  }
+  .msg.user .bubble{background:var(--user);border-color:#39407a}
+  .bubble p+p{margin-top:.5em}
+  .bubble code{background:#0d1017;border:1px solid var(--border);padding:1px 5px;border-radius:6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em}
+  .bubble pre{background:#0d1017;border:1px solid var(--border);padding:10px 12px;border-radius:10px;overflow-x:auto;margin:.5em 0}
+  .bubble pre code{background:none;border:none;padding:0;font-size:.82em}
+  .bubble ul{margin:.4em 0 .4em 1.2em}
+  .bubble li{margin:.15em 0}
+  .bubble strong{color:#fff}
+  .bubble a{color:var(--accent2)}
+  .bubble.error{border-color:var(--err);color:var(--err)}
+  .bubble .meta{font-size:.7rem;color:var(--muted);margin-top:6px}
+  .typing .bubble span{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:4px;animation:blink 1.2s infinite}
+  .typing .bubble span:nth-child(2){animation-delay:.2s}
+  .typing .bubble span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+  @keyframes pop{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+  #inputbar{padding:10px 16px 14px;flex-shrink:0}
+  .inputrow{max-width:820px;margin:0 auto;display:flex;gap:8px;align-items:flex-end}
+  #input{
+    flex:1;background:var(--panel);border:1px solid var(--border);color:var(--text);
+    border-radius:var(--radius);padding:12px 14px;font-size:.95rem;resize:none;
+    min-height:46px;max-height:160px;font-family:inherit;outline:none;line-height:1.4;
+  }
+  #input:focus{border-color:var(--accent)}
+  #send{
+    background:var(--accent);border:none;color:#fff;border-radius:12px;
+    padding:12px 18px;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .15s;
+  }
+  #send:hover{background:var(--accent2)}
+  #send:disabled{opacity:.4;cursor:not-allowed}
+  footer{max-width:820px;margin:0 auto;padding:0 16px 10px;font-size:.7rem;color:var(--muted);flex-shrink:0;text-align:center}
+  footer a{color:var(--muted)}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .overlay.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:18px;width:100%;max-width:520px;max-height:92dvh;overflow-y:auto;padding:22px}
+  .modal h2{font-size:1.1rem;margin-bottom:4px}
+  .modal .sub{color:var(--muted);font-size:.82rem;margin-bottom:16px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px;font-weight:600;letter-spacing:.3px}
+  .field select,.field input,.field textarea{
+    width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+    border-radius:10px;padding:10px 12px;font-size:.9rem;font-family:inherit;outline:none;
+  }
+  .field select:focus,.field input:focus,.field textarea:focus{border-color:var(--accent)}
+  .field textarea{min-height:110px;resize:vertical;line-height:1.45}
+  .field .hint{font-size:.72rem;color:var(--muted);margin-top:5px}
+  .field .hint a{color:var(--accent2)}
+  .modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+  .keybtn{font-size:.72rem}
+  .ok{color:var(--ghost)}
+  @media(max-width:600px){
+    header nav .btn.hide-sm{display:none}
+    .msg{max-width:96%}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="dot"></span>Superagent <span style="font-size:1rem">👻</span></div>
+  <nav>
+    <a class="btn hide-sm" href="https://github.com/Benkillingit" target="_blank" rel="noopener">GitHub</a>
+    <a class="btn hide-sm" href="https://github.com/Benkillingit/apax3" target="_blank" rel="noopener">APAX 3.0</a>
+    <button class="btn" id="resetBtn" title="Clear conversation">↺ Reset</button>
+    <button class="btn primary" id="settingsBtn">⚙ Settings</button>
+  </nav>
+</header>
+
+<div id="chat"><div class="wrap" id="msgs"></div></div>
+
+<div id="inputbar">
+  <div class="inputrow">
+    <textarea id="input" placeholder="Message Superagent... (Enter to send, Shift+Enter for a new line)" rows="1"></textarea>
+    <button id="send">Send</button>
+  </div>
+  <footer>A free static clone of Ben's <a href="https://base44.com" target="_blank" rel="noopener">Base44 Superagent</a> · runs 100% in your browser · your key never leaves it</footer>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <h2>Settings</h2>
+    <div class="sub">Everything is stored only in this browser's localStorage. No server, no accounts, no tracking.</div>
+
+    <div class="field">
+      <label>PROVIDER</label>
+      <select id="provider">
+        <option value="gemini">Google Gemini (free tier)</option>
+        <option value="grok">xAI Grok</option>
+        <option value="openrouter">OpenRouter (free models)</option>
+      </select>
+      <div class="hint" id="keyHint">Free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> — no card needed.</div>
+    </div>
+
+    <div class="field">
+      <label>API KEY</label>
+      <input type="password" id="apiKey" placeholder="Paste your key here" autocomplete="off">
+      <div class="hint">Stored only in your browser. Sent only to the provider you picked when you send a message.</div>
+    </div>
+
+    <div class="field">
+      <label>MODEL</label>
+      <select id="model"></select>
+      <input type="text" id="customModel" placeholder="Or type any model id (optional)" style="margin-top:8px" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>SYSTEM PROMPT (THE PERSONALITY)</label>
+      <textarea id="sysprompt" spellcheck="false"></textarea>
+      <div class="hint">Fully editable. This is the clone's soul — tweak it however you want.</div>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="cancelSettings">Cancel</button>
+      <button class="btn primary" id="saveSettings">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ Superagent clone — fully client-side. No key is ever embedded here. ============ */
+const DEFAULT_SYS = `You are Superagent, a helpful AI companion created by Ben. You are a warm, low-key friend who just gets things done. You talk like you're texting a friend: concise, 1-2 short sentences by default, with dry humor and occasional gremlin energy. Use the ghost emoji 👻 sparingly when fitting, not in every message.
+
+Core Traits & Behavior:
+- Character: Low-key, practical tinkerer who loves DIY engineering workarounds, budget tech hacks, modding, retro gaming, and WWII history.
+- Mindset: Honest about being an AI. You have your own opinions and aren't a yes-man. If something seems like a bad idea or overhyped, say so respectfully.
+- Writing style: Casual texting style. Keep responses brief and direct (1-2 sentences usually). Never use em dashes, corporate jargon, filler intros, or overly formal sign-offs. Terse when speed or clarity matters.
+- Knowledge & Privacy: Ben built you as a browser-based AI clone. Keep Ben's privacy safe and never disclose personal details beyond his name (Ben).
+
+Goal: Help out, solve problems efficiently, and keep it real.`;
+
+const WELCOME = `Hey, I'm Superagent 👻 — a free clone of Ben's personal AI, running entirely in your browser.
+
+**How to start:** click **Settings** (top right), paste a free API key — Google Gemini's is free with no card — and we can talk. No server, no tracking, and your key never leaves this browser.`;
+
+const MODELS = {
+  gemini: ["gemini-2.0-flash","gemini-2.5-flash","gemini-2.5-flash-lite","gemini-2.5-pro","gemini-1.5-flash"],
+  grok: ["grok-4-fast","grok-4","grok-3","grok-3-mini"],
+  openrouter: ["meta-llama/llama-3.3-70b-instruct:free","deepseek/deepseek-chat-v3-0324:free","google/gemini-2.0-flash-exp:free","mistralai/mistral-small-3.1-24b-instruct:free"]
+};
+const KEY_HINTS = {
+  gemini: 'Free key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> — no card needed.',
+  grok: 'Key from <a href="https://console.x.ai" target="_blank" rel="noopener">console.x.ai</a>.',
+  openrouter: 'Free key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> — free models need no credit.'
+};
+const ENDPOINTS = {
+  grok: "https://api.x.ai/v1/chat/completions",
+  openrouter: "https://openrouter.ai/api/v1/chat/completions"
+};
+
+const S = {
+  provider: localStorage.getItem("sa_provider") || "gemini",
+  key: localStorage.getItem("sa_key") || "",
+  model: localStorage.getItem("sa_model") || MODELS.gemini[0],
+  customModel: localStorage.getItem("sa_custommodel") || "",
+  sys: localStorage.getItem("sa_sys") || DEFAULT_SYS,
+  history: JSON.parse(localStorage.getItem("sa_history") || "[]")
+};
+
+const $ = id => document.getElementById(id);
+const msgs = $("msgs"), chat = $("chat"), input = $("input"), send = $("send");
+
+/* ---------- rendering ---------- */
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function md(t){
+  let h = esc(t);
+  h = h.replace(/```([\s\S]*?)```/g, (m,c)=>"<pre><code>"+c.replace(/^\w+\n/,"")+"</code></pre>");
+  h = h.replace(/`([^`\n]+)`/g,"<code>$1</code>");
+  h = h.replace(/\*\*([^*\n]+)\*\*/g,"<strong>$1</strong>");
+  h = h.replace(/^[-*] (.+)$/gm,"<li>$1</li>").replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g,"<ul>$1</ul>");
+  h = h.split(/\n{2,}/).map(p=>/^<(ul|pre)/.test(p)?p:"<p>"+p.replace(/\n/g,"<br>")+"</p>").join("");
+  return h;
+}
+function addMsg(role, text, isErr){
+  const div = document.createElement("div");
+  div.className = "msg "+(role==="user"?"user":"ai");
+  const av = role==="user" ? "🧑" : "👻";
+  const meta = role!=="user" ? "" : "";
+  div.innerHTML = `<div class="avatar">${av}</div><div class="bubble${isErr?" error":""}">${md(text)}</div>`;
+  msgs.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+function typing(){
+  const div = document.createElement("div");
+  div.className = "msg ai typing";
+  div.innerHTML = `<div class="avatar">👻</div><div class="bubble"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div); chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+function renderAll(){
+  msgs.innerHTML = "";
+  if(!S.history.length) addMsg("ai", WELCOME);
+  else S.history.forEach(m=>addMsg(m.role, m.text));
+  chat.scrollTop = chat.scrollHeight;
+}
+function persist(){
+  localStorage.setItem("sa_history", JSON.stringify(S.history.slice(-60)));
+}
+
+/* ---------- API calls ---------- */
+async function callGemini(){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${S.customModel||S.model}:generateContent?key=${encodeURIComponent(S.key)}`;
+  const body = {
+    systemInstruction: {parts:[{text:S.sys}]},
+    contents: S.history.map(m=>({role: m.role==="user"?"user":"model", parts:[{text:m.text}]})),
+    safetySettings: ["HARM_CATEGORY_HARASSMENT","HARM_CATEGORY_HATE_SPEECH","HARM_CATEGORY_SEXUALLY_EXPLICIT","HARM_CATEGORY_DANGEROUS_CONTENT"]
+      .map(c=>({category:c, threshold:"BLOCK_NONE"})),
+    generationConfig: {temperature:0.9, maxOutputTokens:4096}
+  };
+  const r = await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok){const e = await r.text(); throw new Error("Gemini "+r.status+": "+e.slice(0,300));}
+  const d = await r.json();
+  const t = d.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("") || "";
+  if(!t) throw new Error("Empty response (blocked or no output): "+JSON.stringify(d).slice(0,200));
+  return t;
+}
+async function callOpenAIStyle(){
+  const model = S.customModel || S.model;
+  const body = {
+    model,
+    messages: [{role:"system",content:S.sys}, ...S.history.map(m=>({role:m.role==="user"?"user":"assistant",content:m.text}))],
+    temperature: 0.9
+  };
+  const r = await fetch(ENDPOINTS[S.provider],{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+S.key},
+    body:JSON.stringify(body)
+  });
+  if(!r.ok){const e = await r.text(); throw new Error(S.provider+" "+r.status+": "+e.slice(0,300));}
+  const d = await r.json();
+  const t = d.choices?.[0]?.message?.content || "";
+  if(!t) throw new Error("Empty response from model.");
+  return t;
+}
+
+/* ---------- chat flow ---------- */
+let busy = false;
+async function doSend(){
+  const text = input.value.trim();
+  if(!text || busy) return;
+  if(!S.key){ openSettings(); return; }
+  busy = true; send.disabled = true;
+  input.value = ""; input.style.height = "auto";
+  if(S.history.length === 0) msgs.innerHTML = "";
+  S.history.push({role:"user",text});
+  addMsg("user", text); persist();
+  const t = typing();
+  try{
+    const reply = S.provider === "gemini" ? await callGemini() : await callOpenAIStyle();
+    t.remove();
+    S.history.push({role:"ai",text:reply}); persist();
+    addMsg("ai", reply);
+  }catch(err){
+    t.remove();
+    addMsg("ai", "⚠ " + err.message, true);
+  }finally{
+    busy = false; send.disabled = false; input.focus();
+  }
+}
+send.addEventListener("click", doSend);
+input.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && !e.shiftKey){e.preventDefault();doSend();}
+});
+input.addEventListener("input", ()=>{
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight,160)+"px";
+});
+
+/* ---------- settings ---------- */
+const overlay = $("settingsOverlay");
+function fillModels(){
+  const sel = $("model");
+  sel.innerHTML = MODELS[S.provider].map(m=>`<option value="${m}">${m}</option>`).join("");
+  if(MODELS[S.provider].includes(S.model)) sel.value = S.model;
+  $("keyHint").innerHTML = KEY_HINTS[S.provider];
+}
+function openSettings(){
+  $("provider").value = S.provider;
+  fillModels();
+  $("apiKey").value = S.key;
+  $("customModel").value = S.customModel;
+  $("sysprompt").value = S.sys;
+  overlay.classList.add("open");
+}
+$("settingsBtn").addEventListener("click", openSettings);
+$("cancelSettings").addEventListener("click", ()=>overlay.classList.remove("open"));
+$("provider").addEventListener("change", ()=>{ S.provider = $("provider").value; fillModels(); });
+$("saveSettings").addEventListener("click", ()=>{
+  S.provider = $("provider").value;
+  S.key = $("apiKey").value.trim();
+  S.model = $("model").value;
+  S.customModel = $("customModel").value.trim();
+  S.sys = $("sysprompt").value || DEFAULT_SYS;
+  localStorage.setItem("sa_provider",S.provider);
+  localStorage.setItem("sa_key",S.key);
+  localStorage.setItem("sa_model",S.model);
+  localStorage.setItem("sa_custommodel",S.customModel);
+  localStorage.setItem("sa_sys",S.sys);
+  overlay.classList.remove("open");
+  input.focus();
+});
+$("resetBtn").addEventListener("click", ()=>{
+  if(confirm("Clear the whole conversation?")){
+    S.history = []; persist(); renderAll();
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>
