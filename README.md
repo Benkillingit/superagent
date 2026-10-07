@@ -23,6 +23,7 @@ A public, static clone of a personal AI agent (originally built on Base44 Supera
 ## Features
 
 - Zero setup, keyless chat out of the box
+- 🌐 Web access toggle: the clone can search the internet (Gemini + Google Search grounding)
 - Multi-provider: Pollinations (free, no key) / Google Gemini / xAI Grok / OpenRouter free models
 - Gemini safety settings set to the loosest the API allows
 - Editable system prompt (the personality is yours to rewrite)
